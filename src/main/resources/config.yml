@@ -1,0 +1,18 @@
+# config.yml
+
+# ATM settings
+atm:
+  # Valid base blocks for ATM (sign must be attached to one of these)
+  valid-blocks:
+    - IRON_BLOCK
+    - QUARTZ_BLOCK
+    - SMOOTH_QUARTZ
+    - POLISHED_ANDESITE
+  default-cash: 100000.0
+  default-max-withdrawal: 5000.0
+  default-fee: 2.50
+
+# Card settings
+cards:
+  expiration-years: 3
+  give-physical-card: true  # Give item when card is issued
