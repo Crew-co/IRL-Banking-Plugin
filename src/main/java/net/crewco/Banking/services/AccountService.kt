@@ -34,7 +34,7 @@ class AccountService(
             routingNumber = numberGenerator.getBankRoutingNumber(),
             accountType = type,
             balance = initialDeposit,
-            accountName = accountName.ifEmpty { "${type.displayName}" }
+            accountName = accountName.ifEmpty { type.displayName }
         )
 
         val success = accountRepository.create(account)

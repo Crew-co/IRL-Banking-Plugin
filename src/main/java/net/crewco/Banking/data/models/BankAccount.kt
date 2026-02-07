@@ -11,6 +11,7 @@ data class BankAccount(
     val accountNumber: String,               // 10-digit account number
     val routingNumber: String,               // 9-digit routing number
     val accountType: AccountType,
+    val bankId: String = "SYSTEM",           // Which bank this account belongs to
     var balance: Double = 0.0,
     var frozen: Boolean = false,
     var overdraftLimit: Double = 500.0,      // Max overdraft amount

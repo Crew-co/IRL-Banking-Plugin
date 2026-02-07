@@ -28,7 +28,7 @@ class LoanGUI(private val plugin: Startup) {
     }
 
     private fun showLoansMenu(player: Player, loans: List<Loan>) {
-        val gui = ChestGui(6, "§1§lCrewCo Bank §8- §fYour Loans")
+        val gui = ChestGui(6, "&1&lCrewCo Bank &8- &fYour Loans")
         gui.setOnGlobalClick { event -> event.isCancelled = true }
 
         // Background
@@ -44,12 +44,12 @@ class LoanGUI(private val plugin: Startup) {
 
         headerPane.addItem(GuiItem(createItem(
             Material.BOOK,
-            "§6§l📋 Your Loans",
+            "&6&l📋 Your Loans",
             listOf(
                 "",
-                "§7Total Loans: §f${loans.size}",
-                "§7Active Loans: §e${activeLoans.size}",
-                "§7Total Owed: §c${Messages.formatCurrency(totalOwed)}"
+                "&7Total Loans: &f${loans.size}",
+                "&7Active Loans: &e${activeLoans.size}",
+                "&7Total Owed: &c${Messages.formatCurrency(totalOwed)}"
             )
         )), 4, 0)
         gui.addPane(headerPane)
@@ -69,44 +69,44 @@ class LoanGUI(private val plugin: Startup) {
                 }
 
                 val statusColor = when (loan.status) {
-                    LoanStatus.ACTIVE -> "§a"
-                    LoanStatus.PENDING -> "§e"
-                    LoanStatus.APPROVED -> "§b"
-                    LoanStatus.PAID_OFF -> "§2"
-                    LoanStatus.DEFAULTED -> "§c"
-                    LoanStatus.REJECTED -> "§4"
-                    LoanStatus.CANCELLED -> "§8"
+                    LoanStatus.ACTIVE -> "&a"
+                    LoanStatus.PENDING -> "&e"
+                    LoanStatus.APPROVED -> "&b"
+                    LoanStatus.PAID_OFF -> "&2"
+                    LoanStatus.DEFAULTED -> "&c"
+                    LoanStatus.REJECTED -> "&4"
+                    LoanStatus.CANCELLED -> "&8"
                 }
 
                 val lore = mutableListOf(
                     "",
-                    "§7Loan ID: §e${loan.loanId}",
-                    "§7Type: §f${loan.loanType.displayName}",
+                    "&7Loan ID: &e${loan.loanId}",
+                    "&7Type: &f${loan.loanType.displayName}",
                     "",
-                    "§7Principal: §f${Messages.formatCurrency(loan.principalAmount)}",
-                    "§7Interest Rate: §e${loan.interestRate}%",
-                    "§7Monthly Payment: §e${Messages.formatCurrency(loan.monthlyPayment)}",
+                    "&7Principal: &f${Messages.formatCurrency(loan.principalAmount)}",
+                    "&7Interest Rate: &e${loan.interestRate}%",
+                    "&7Monthly Payment: &e${Messages.formatCurrency(loan.monthlyPayment)}",
                     "",
-                    "§7Remaining: §c${Messages.formatCurrency(loan.remainingBalance)}",
-                    "§7Total Paid: §a${Messages.formatCurrency(loan.totalPaid)}",
+                    "&7Remaining: &c${Messages.formatCurrency(loan.remainingBalance)}",
+                    "&7Total Paid: &a${Messages.formatCurrency(loan.totalPaid)}",
                     "",
-                    "§7Status: $statusColor${loan.status.name}"
+                    "&7Status: $statusColor${loan.status.name}"
                 )
 
                 if (loan.status == LoanStatus.ACTIVE && loan.nextPaymentDue != null) {
                     lore.add("")
-                    lore.add("§7Next Payment: §f${loan.nextPaymentDue!!.toLocalDate()}")
+                    lore.add("&7Next Payment: &f${loan.nextPaymentDue!!.toLocalDate()}")
                     if (loan.isOverdue()) {
-                        lore.add("§c⚠ OVERDUE!")
+                        lore.add("&c⚠ OVERDUE!")
                     }
                 }
 
                 if (loan.status == LoanStatus.ACTIVE) {
                     lore.add("")
-                    lore.add("§eClick for options")
+                    lore.add("&eClick for options")
                 }
 
-                GuiItem(createItem(material, "§f${loan.loanType.displayName}", lore)) {
+                GuiItem(createItem(material, "&f${loan.loanType.displayName}", lore)) {
                     if (loan.status == LoanStatus.ACTIVE) {
                         showLoanOptions(player, loan)
                     }
@@ -118,14 +118,14 @@ class LoanGUI(private val plugin: Startup) {
 
             // Navigation
             val navPane = StaticPane(0, 5, 9, 1)
-            navPane.addItem(GuiItem(createItem(Material.ARROW, "§7Previous", emptyList())) {
+            navPane.addItem(GuiItem(createItem(Material.ARROW, "&7Previous", emptyList())) {
                 if (paginatedPane.page > 0) {
                     paginatedPane.page = paginatedPane.page - 1
                     gui.update()
                 }
             }, 0, 0)
 
-            navPane.addItem(GuiItem(createItem(Material.ARROW, "§7Next", emptyList())) {
+            navPane.addItem(GuiItem(createItem(Material.ARROW, "&7Next", emptyList())) {
                 if (paginatedPane.page < paginatedPane.pages - 1) {
                     paginatedPane.page = paginatedPane.page + 1
                     gui.update()
@@ -136,11 +136,11 @@ class LoanGUI(private val plugin: Startup) {
             val emptyPane = StaticPane(0, 2, 9, 2)
             emptyPane.addItem(GuiItem(createItem(
                 Material.BARRIER,
-                "§cNo Loans",
+                "&cNo Loans",
                 listOf(
                     "",
-                    "§7You don't have any loans.",
-                    "§7Use §e/loan apply §7to apply for one!"
+                    "&7You don't have any loans.",
+                    "&7Use &e/loan apply &7to apply for one!"
                 )
             )), 4, 0)
             gui.addPane(emptyPane)
@@ -150,8 +150,8 @@ class LoanGUI(private val plugin: Startup) {
         val bottomPane = StaticPane(0, 5, 9, 1)
         bottomPane.addItem(GuiItem(createItem(
             Material.BOOK,
-            "§e§lView Loan Types",
-            listOf("", "§7See available loan options")
+            "&e&lView Loan Types",
+            listOf("", "&7See available loan options")
         )) {
             showLoanTypes(player)
         }, 3, 0)
@@ -159,7 +159,7 @@ class LoanGUI(private val plugin: Startup) {
         // Close button
         bottomPane.addItem(GuiItem(createItem(
             Material.BARRIER,
-            "§c§lClose",
+            "&c&lClose",
             emptyList()
         )) {
             player.closeInventory()
@@ -170,7 +170,7 @@ class LoanGUI(private val plugin: Startup) {
     }
 
     private fun showLoanOptions(player: Player, loan: Loan) {
-        val gui = ChestGui(4, "§1§lLoan §8- §f${loan.loanId}")
+        val gui = ChestGui(4, "&1&lLoan &8- &f${loan.loanId}")
         gui.setOnGlobalClick { event -> event.isCancelled = true }
 
         // Background
@@ -184,27 +184,27 @@ class LoanGUI(private val plugin: Startup) {
         // Loan summary
         contentPane.addItem(GuiItem(createItem(
             Material.BOOK,
-            "§6§l${loan.loanType.displayName}",
+            "&6&l${loan.loanType.displayName}",
             listOf(
                 "",
-                "§7Loan ID: §e${loan.loanId}",
-                "§7Principal: §f${Messages.formatCurrency(loan.principalAmount)}",
-                "§7Remaining: §c${Messages.formatCurrency(loan.remainingBalance)}",
+                "&7Loan ID: &e${loan.loanId}",
+                "&7Principal: &f${Messages.formatCurrency(loan.principalAmount)}",
+                "&7Remaining: &c${Messages.formatCurrency(loan.remainingBalance)}",
                 "",
-                "§7Monthly Payment: §e${Messages.formatCurrency(loan.monthlyPayment)}",
-                "§7Months Left: §f${loan.monthsRemaining}/${loan.termMonths}"
+                "&7Monthly Payment: &e${Messages.formatCurrency(loan.monthlyPayment)}",
+                "&7Months Left: &f${loan.monthsRemaining}/${loan.termMonths}"
             )
         )), 4, 0)
 
         // Make payment
         contentPane.addItem(GuiItem(createItem(
             Material.GOLD_INGOT,
-            "§a§lMake Monthly Payment",
+            "&a&lMake Monthly Payment",
             listOf(
                 "",
-                "§7Pay: §e${Messages.formatCurrency(loan.monthlyPayment)}",
+                "&7Pay: &e${Messages.formatCurrency(loan.monthlyPayment)}",
                 "",
-                "§aClick to pay"
+                "&aClick to pay"
             )
         )) {
             player.closeInventory()
@@ -224,12 +224,12 @@ class LoanGUI(private val plugin: Startup) {
         // Pay off entire loan
         contentPane.addItem(GuiItem(createItem(
             Material.EMERALD_BLOCK,
-            "§2§lPay Off Entire Loan",
+            "&2&lPay Off Entire Loan",
             listOf(
                 "",
-                "§7Pay remaining: §c${Messages.formatCurrency(loan.remainingBalance)}",
+                "&7Pay remaining: &c${Messages.formatCurrency(loan.remainingBalance)}",
                 "",
-                "§aClick to pay off"
+                "&aClick to pay off"
             )
         )) {
             player.closeInventory()
@@ -246,7 +246,7 @@ class LoanGUI(private val plugin: Startup) {
         // Back button
         contentPane.addItem(GuiItem(createItem(
             Material.ARROW,
-            "§7Back",
+            "&7Back",
             emptyList()
         )) {
             openMainMenu(player)
@@ -257,7 +257,7 @@ class LoanGUI(private val plugin: Startup) {
     }
 
     private fun showLoanTypes(player: Player) {
-        val gui = ChestGui(4, "§1§lAvailable Loan Types")
+        val gui = ChestGui(4, "&1&lAvailable Loan Types")
         gui.setOnGlobalClick { event -> event.isCancelled = true }
 
         // Background
@@ -287,17 +287,17 @@ class LoanGUI(private val plugin: Startup) {
 
             contentPane.addItem(GuiItem(createItem(
                 material,
-                "§6§l${type.displayName}",
+                "&6&l${type.displayName}",
                 listOf(
                     "",
-                    "§7${type.name.lowercase().replaceFirstChar { it.uppercase() }} loans",
+                    "&7${type.name.lowercase().replaceFirstChar { it.uppercase() }} loans",
                     "",
-                    "§7Base Rate: §e${type.baseInterestRate}%",
-                    "§7Max Amount: §f${Messages.formatCurrency(type.maxAmount)}",
-                    "§7Max Term: §f${type.maxTermMonths} months",
-                    "§7Collateral: ${if (type.requiresCollateral) "§cRequired" else "§aNot Required"}",
+                    "&7Base Rate: &e${type.baseInterestRate}%",
+                    "&7Max Amount: &f${Messages.formatCurrency(type.maxAmount)}",
+                    "&7Max Term: &f${type.maxTermMonths} months",
+                    "&7Collateral: ${if (type.requiresCollateral) "&cRequired" else "&aNot Required"}",
                     "",
-                    "§eUse: §f/loan apply ${type.name.lowercase()} ..."
+                    "&eUse: &f/loan apply ${type.name.lowercase()} ..."
                 )
             )), x, y)
         }
@@ -305,7 +305,7 @@ class LoanGUI(private val plugin: Startup) {
         // Back button
         contentPane.addItem(GuiItem(createItem(
             Material.ARROW,
-            "§7Back",
+            "&7Back",
             emptyList()
         )) {
             openMainMenu(player)

@@ -29,7 +29,7 @@ class CardGUI(private val plugin: Startup) {
     }
 
     private fun showCardsMenu(player: Player, cards: List<Card>) {
-        val gui = ChestGui(6, "§1§lCrewCo Bank §8- §fYour Cards")
+        val gui = ChestGui(6, "&1&lCrewCo Bank &8- &fYour Cards")
         gui.setOnGlobalClick { event -> event.isCancelled = true }
 
         // Background
@@ -42,11 +42,11 @@ class CardGUI(private val plugin: Startup) {
         val headerPane = StaticPane(0, 0, 9, 1)
         headerPane.addItem(GuiItem(createItem(
             Material.PAPER,
-            "§6§l💳 Your Cards",
+            "&6&l💳 Your Cards",
             listOf(
                 "",
-                "§7Total Cards: §f${cards.size}",
-                "§7Active: §a${cards.count { it.active && !it.frozen }}"
+                "&7Total Cards: &f${cards.size}",
+                "&7Active: &a${cards.count { it.active && !it.frozen }}"
             )
         )), 4, 0)
         gui.addPane(headerPane)
@@ -65,10 +65,10 @@ class CardGUI(private val plugin: Startup) {
                 }
 
                 val statusColor = when {
-                    !card.active -> "§8"
-                    card.frozen -> "§b"
-                    card.isExpired() -> "§c"
-                    else -> "§a"
+                    !card.active -> "&8"
+                    card.frozen -> "&b"
+                    card.isExpired() -> "&c"
+                    else -> "&a"
                 }
 
                 val status = when {
@@ -80,20 +80,20 @@ class CardGUI(private val plugin: Startup) {
 
                 GuiItem(createItem(
                     material,
-                    "§f${card.cardType.displayName}",
+                    "&f${card.cardType.displayName}",
                     listOf(
                         "",
-                        "§7Card: §e${card.getMaskedNumber()}",
-                        "§7Expires: §f${card.expirationDate}",
-                        "§7Linked Account: §f${card.linkedAccountNumber}",
+                        "&7Card: &e${card.getMaskedNumber()}",
+                        "&7Expires: &f${card.expirationDate}",
+                        "&7Linked Account: &f${card.linkedAccountNumber}",
                         "",
-                        "§7Daily Limit: §e${Messages.formatCurrency(card.dailyLimit)}",
-                        "§7Spent Today: §c${Messages.formatCurrency(card.spentToday)}",
-                        "§7Remaining: §a${Messages.formatCurrency(card.dailyLimit - card.spentToday)}",
+                        "&7Daily Limit: &e${Messages.formatCurrency(card.dailyLimit)}",
+                        "&7Spent Today: &c${Messages.formatCurrency(card.spentToday)}",
+                        "&7Remaining: &a${Messages.formatCurrency(card.dailyLimit - card.spentToday)}",
                         "",
-                        "§7Status: $statusColor$status",
+                        "&7Status: $statusColor$status",
                         "",
-                        "§eClick for options"
+                        "&eClick for options"
                     )
                 )) {
                     showCardOptions(player, card)
@@ -105,14 +105,14 @@ class CardGUI(private val plugin: Startup) {
 
             // Navigation
             val navPane = StaticPane(0, 5, 9, 1)
-            navPane.addItem(GuiItem(createItem(Material.ARROW, "§7Previous", emptyList())) {
+            navPane.addItem(GuiItem(createItem(Material.ARROW, "&7Previous", emptyList())) {
                 if (paginatedPane.page > 0) {
                     paginatedPane.page = paginatedPane.page - 1
                     gui.update()
                 }
             }, 0, 0)
 
-            navPane.addItem(GuiItem(createItem(Material.ARROW, "§7Next", emptyList())) {
+            navPane.addItem(GuiItem(createItem(Material.ARROW, "&7Next", emptyList())) {
                 if (paginatedPane.page < paginatedPane.pages - 1) {
                     paginatedPane.page = paginatedPane.page + 1
                     gui.update()
@@ -123,11 +123,11 @@ class CardGUI(private val plugin: Startup) {
             val emptyPane = StaticPane(0, 2, 9, 2)
             emptyPane.addItem(GuiItem(createItem(
                 Material.BARRIER,
-                "§cNo Cards",
+                "&cNo Cards",
                 listOf(
                     "",
-                    "§7You don't have any cards.",
-                    "§7Use §e/card apply §7to get one!"
+                    "&7You don't have any cards.",
+                    "&7Use &e/card apply &7to get one!"
                 )
             )), 4, 0)
             gui.addPane(emptyPane)
@@ -137,7 +137,7 @@ class CardGUI(private val plugin: Startup) {
         val bottomPane = StaticPane(0, 5, 9, 1)
         bottomPane.addItem(GuiItem(createItem(
             Material.BARRIER,
-            "§c§lClose",
+            "&c&lClose",
             emptyList()
         )) {
             player.closeInventory()
@@ -148,7 +148,7 @@ class CardGUI(private val plugin: Startup) {
     }
 
     private fun showCardOptions(player: Player, card: Card) {
-        val gui = ChestGui(4, "§1§lCard §8- §f${card.getMaskedNumber()}")
+        val gui = ChestGui(4, "&1&lCard &8- &f${card.getMaskedNumber()}")
         gui.setOnGlobalClick { event -> event.isCancelled = true }
 
         // Background
@@ -162,14 +162,14 @@ class CardGUI(private val plugin: Startup) {
         // Card info
         contentPane.addItem(GuiItem(createItem(
             Material.PAPER,
-            "§6§l${card.cardType.displayName}",
+            "&6&l${card.cardType.displayName}",
             listOf(
                 "",
-                "§7Card Number:",
-                "§e${card.cardNumber}",
+                "&7Card Number:",
+                "&e${card.cardNumber}",
                 "",
-                "§7CVV: §f${card.cvv}",
-                "§7Expires: §f${card.expirationDate}"
+                "&7CVV: &f${card.cvv}",
+                "&7Expires: &f${card.expirationDate}"
             )
         )), 4, 0)
 
@@ -177,12 +177,12 @@ class CardGUI(private val plugin: Startup) {
         if (card.active && !card.frozen) {
             contentPane.addItem(GuiItem(createItem(
                 Material.PAPER,
-                "§a§lGet Physical Card",
+                "&a&lGet Physical Card",
                 listOf(
                     "",
-                    "§7Receive a card item to use at ATMs",
+                    "&7Receive a card item to use at ATMs",
                     "",
-                    "§aClick to receive"
+                    "&aClick to receive"
                 )
             )) {
                 val cardItem = BankCardItem.createCardItem(card)
@@ -197,12 +197,12 @@ class CardGUI(private val plugin: Startup) {
             if (card.frozen) {
                 contentPane.addItem(GuiItem(createItem(
                     Material.CAMPFIRE,
-                    "§6§lUnfreeze Card",
+                    "&6&lUnfreeze Card",
                     listOf(
                         "",
-                        "§7Unfreeze this card to use it again",
+                        "&7Unfreeze this card to use it again",
                         "",
-                        "§aClick to unfreeze"
+                        "&aClick to unfreeze"
                     )
                 )) {
                     plugin.launch {
@@ -218,13 +218,13 @@ class CardGUI(private val plugin: Startup) {
             } else {
                 contentPane.addItem(GuiItem(createItem(
                     Material.ICE,
-                    "§b§lFreeze Card",
+                    "&b&lFreeze Card",
                     listOf(
                         "",
-                        "§7Temporarily disable this card",
-                        "§7You can unfreeze it later",
+                        "&7Temporarily disable this card",
+                        "&7You can unfreeze it later",
                         "",
-                        "§eClick to freeze"
+                        "&eClick to freeze"
                     )
                 )) {
                     plugin.launch {
@@ -244,13 +244,13 @@ class CardGUI(private val plugin: Startup) {
         if (card.active) {
             contentPane.addItem(GuiItem(createItem(
                 Material.BARRIER,
-                "§c§lCancel Card",
+                "&c&lCancel Card",
                 listOf(
                     "",
-                    "§cPermanently deactivate this card",
-                    "§cThis cannot be undone!",
+                    "&cPermanently deactivate this card",
+                    "&cThis cannot be undone!",
                     "",
-                    "§cClick to cancel"
+                    "&cClick to cancel"
                 )
             )) {
                 showCancelConfirmation(player, card)
@@ -260,19 +260,19 @@ class CardGUI(private val plugin: Startup) {
         // Change PIN info
         contentPane.addItem(GuiItem(createItem(
             Material.TRIPWIRE_HOOK,
-            "§e§lChange PIN",
+            "&e&lChange PIN",
             listOf(
                 "",
-                "§7Change your card PIN",
+                "&7Change your card PIN",
                 "",
-                "§eUse: §f/card changepin <card> <old> <new>"
+                "&eUse: &f/card changepin <card> <old> <new>"
             )
         )), 7, 2)
 
         // Back button
         contentPane.addItem(GuiItem(createItem(
             Material.ARROW,
-            "§7Back",
+            "&7Back",
             emptyList()
         )) {
             openMainMenu(player)
@@ -283,7 +283,7 @@ class CardGUI(private val plugin: Startup) {
     }
 
     private fun showCancelConfirmation(player: Player, card: Card) {
-        val gui = ChestGui(3, "§4§lConfirm Cancel Card")
+        val gui = ChestGui(3, "&4&lConfirm Cancel Card")
         gui.setOnGlobalClick { event -> event.isCancelled = true }
 
         // Background
@@ -297,20 +297,20 @@ class CardGUI(private val plugin: Startup) {
         // Warning
         contentPane.addItem(GuiItem(createItem(
             Material.BARRIER,
-            "§c§lCancel Card?",
+            "&c&lCancel Card?",
             listOf(
                 "",
-                "§cThis will permanently deactivate",
-                "§cyour card ${card.getMaskedNumber()}",
+                "&cThis will permanently deactivate",
+                "&cyour card ${card.getMaskedNumber()}",
                 "",
-                "§cThis action cannot be undone!"
+                "&cThis action cannot be undone!"
             )
         )), 4, 0)
 
         // Confirm
         contentPane.addItem(GuiItem(createItem(
             Material.LIME_WOOL,
-            "§a§lYes, Cancel Card",
+            "&a&lYes, Cancel Card",
             emptyList()
         )) {
             plugin.launch {
@@ -327,7 +327,7 @@ class CardGUI(private val plugin: Startup) {
         // Cancel
         contentPane.addItem(GuiItem(createItem(
             Material.RED_WOOL,
-            "§c§lNo, Go Back",
+            "&c&lNo, Go Back",
             emptyList()
         )) {
             showCardOptions(player, card)

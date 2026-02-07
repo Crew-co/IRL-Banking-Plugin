@@ -6,6 +6,7 @@ import com.google.inject.Inject
 import net.crewco.Banking.Startup
 import net.crewco.Banking.Startup.Companion.atmGUI
 import net.crewco.Banking.Startup.Companion.atmService
+import net.crewco.Banking.Startup.Companion.accountService
 import net.crewco.Banking.Startup.Companion.cardService
 import net.crewco.Banking.Startup.Companion.plugin
 import net.crewco.Banking.gui.ATMGUI
@@ -21,6 +22,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.SignChangeEvent
+import org.bukkit.event.player.AsyncPlayerChatEvent
 import org.bukkit.event.player.PlayerInteractEvent
 
 class ATMInteractListener: Listener {
@@ -212,6 +214,66 @@ class ATMInteractListener: Listener {
                 if (atm != null) {
                     atmService.removeATM(atm.atmId)
                     player.sendMessage(Messages.info("ATM removed from system."))
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle custom amount input for player payments
+     */
+    @EventHandler(priority = EventPriority.LOWEST)
+    fun onPlayerChat(event: AsyncPlayerChatEvent) {
+        val player = event.player
+        val pending = ATMGUI.pendingPlayerPayments[player.uniqueId] ?: return
+
+        event.isCancelled = true
+        ATMGUI.pendingPlayerPayments.remove(player.uniqueId)
+
+        val message = event.message.trim().lowercase()
+
+        if (message == "cancel") {
+            player.sendMessage(Messages.info("Payment cancelled."))
+            return
+        }
+
+        val amount = message.replace(",", "").replace("$", "").toDoubleOrNull()
+
+        if (amount == null || amount <= 0) {
+            player.sendMessage(Messages.error("Invalid amount! Payment cancelled."))
+            return
+        }
+
+        // Process the payment
+        plugin.launch {
+            val result = accountService.transfer(
+                pending.sourceAccountNumber,
+                pending.targetAccountNumber,
+                amount,
+                player.uniqueId,
+                "ATM Transfer to ${pending.targetName}"
+            )
+
+            when (result) {
+                net.crewco.Banking.services.sdata.TransferResult.SUCCESS -> {
+                    player.sendMessage(Messages.success("Sent ${Messages.formatCurrency(amount)} to ${pending.targetName}!"))
+                    val newBalance = accountService.getBalance(pending.sourceAccountNumber) ?: 0.0
+                    player.sendMessage(Messages.info("New balance: ${Messages.formatCurrency(newBalance)}"))
+                    
+                    // Notify target player if online
+                    val targetPlayer = org.bukkit.Bukkit.getPlayer(pending.targetUuid)
+                    if (targetPlayer != null && targetPlayer.isOnline) {
+                        targetPlayer.sendMessage(Messages.success("${player.name} sent you ${Messages.formatCurrency(amount)}!"))
+                    }
+                }
+                net.crewco.Banking.services.sdata.TransferResult.INSUFFICIENT_FUNDS -> {
+                    player.sendMessage(Messages.error("Insufficient funds!"))
+                }
+                net.crewco.Banking.services.sdata.TransferResult.DAILY_LIMIT_EXCEEDED -> {
+                    player.sendMessage(Messages.error("Daily limit exceeded!"))
+                }
+                else -> {
+                    player.sendMessage(Messages.error("Transfer failed: ${result.name}"))
                 }
             }
         }

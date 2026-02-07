@@ -151,6 +151,107 @@ class DatabaseManager(private val plugin: Startup) {
 
         execute("CREATE INDEX IF NOT EXISTS idx_atms_id ON bank_atms(atm_id)")
 
+        // Player Banks table
+        execute("""
+            CREATE TABLE IF NOT EXISTS banks (
+                bank_id TEXT PRIMARY KEY,
+                owner_uuid TEXT NOT NULL,
+                bank_name TEXT NOT NULL,
+                bank_tag TEXT UNIQUE NOT NULL,
+                reserves REAL DEFAULT 0.0,
+                total_deposits REAL DEFAULT 0.0,
+                total_loans_out REAL DEFAULT 0.0,
+                atm_withdraw_fee REAL DEFAULT 2.50,
+                atm_deposit_fee REAL DEFAULT 0.0,
+                transfer_fee REAL DEFAULT 1.00,
+                account_open_fee REAL DEFAULT 10.00,
+                monthly_fee REAL DEFAULT 0.0,
+                savings_rate REAL DEFAULT 2.0,
+                checking_rate REAL DEFAULT 0.1,
+                loan_rate REAL DEFAULT 8.0,
+                max_loan_amount REAL DEFAULT 50000.0,
+                daily_withdraw_limit REAL DEFAULT 10000.0,
+                min_balance REAL DEFAULT 0.0,
+                reserve_requirement REAL DEFAULT 0.10,
+                is_open INTEGER DEFAULT 1,
+                is_frozen INTEGER DEFAULT 0,
+                is_suspended INTEGER DEFAULT 0,
+                license_expiry TEXT,
+                license_cost REAL DEFAULT 0.0,
+                total_customers INTEGER DEFAULT 0,
+                total_transactions INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """.trimIndent())
+
+        execute("CREATE INDEX IF NOT EXISTS idx_banks_owner ON banks(owner_uuid)")
+        execute("CREATE INDEX IF NOT EXISTS idx_banks_tag ON banks(bank_tag)")
+
+        // Treasury table (single row)
+        execute("""
+            CREATE TABLE IF NOT EXISTS treasury (
+                treasury_id TEXT PRIMARY KEY DEFAULT 'CENTRAL',
+                balance REAL DEFAULT 1000000.0,
+                total_money_supply REAL DEFAULT 0.0,
+                bank_license_cost REAL DEFAULT 50000.0,
+                bank_license_duration INTEGER DEFAULT 30,
+                atm_license_cost REAL DEFAULT 5000.0,
+                max_banks_per_player INTEGER DEFAULT 3,
+                max_atms_per_bank INTEGER DEFAULT 20,
+                min_savings_rate REAL DEFAULT 0.0,
+                max_savings_rate REAL DEFAULT 15.0,
+                min_loan_rate REAL DEFAULT 1.0,
+                max_loan_rate REAL DEFAULT 30.0,
+                max_atm_fee REAL DEFAULT 25.0,
+                max_transfer_fee REAL DEFAULT 50.0,
+                max_account_fee REAL DEFAULT 100.0,
+                max_monthly_fee REAL DEFAULT 25.0,
+                reserve_requirement REAL DEFAULT 0.10,
+                player_starting_balance REAL DEFAULT 100.0,
+                enable_player_banks INTEGER DEFAULT 1,
+                deposit_insurance INTEGER DEFAULT 1,
+                insurance_limit REAL DEFAULT 100000.0,
+                last_update TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """.trimIndent())
+
+        // Bank memberships (player-bank relationship)
+        execute("""
+            CREATE TABLE IF NOT EXISTS bank_memberships (
+                membership_id TEXT PRIMARY KEY,
+                bank_id TEXT NOT NULL,
+                player_uuid TEXT NOT NULL,
+                joined_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                is_primary INTEGER DEFAULT 0,
+                FOREIGN KEY (bank_id) REFERENCES banks(bank_id)
+            )
+        """.trimIndent())
+
+        execute("CREATE INDEX IF NOT EXISTS idx_memberships_player ON bank_memberships(player_uuid)")
+        execute("CREATE INDEX IF NOT EXISTS idx_memberships_bank ON bank_memberships(bank_id)")
+        execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_memberships_unique ON bank_memberships(player_uuid, bank_id)")
+
+        // Treasury audit log
+        execute("""
+            CREATE TABLE IF NOT EXISTS treasury_logs (
+                log_id TEXT PRIMARY KEY,
+                action TEXT NOT NULL,
+                target_bank_id TEXT,
+                target_player_uuid TEXT,
+                amount REAL DEFAULT 0.0,
+                description TEXT,
+                performed_by TEXT NOT NULL,
+                timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """.trimIndent())
+
+        execute("CREATE INDEX IF NOT EXISTS idx_treasury_logs_time ON treasury_logs(timestamp)")
+
+        // Add bank_id column to accounts and atms if not exists
+        addColumnIfNotExists("bank_accounts", "bank_id", "TEXT DEFAULT 'SYSTEM'")
+        addColumnIfNotExists("bank_atms", "bank_id", "TEXT DEFAULT 'SYSTEM'")
+        addColumnIfNotExists("bank_atms", "out_of_network_fee", "REAL DEFAULT 5.0")
+
         plugin.logger.info("Database tables created/verified!")
     }
 
@@ -232,4 +333,19 @@ class DatabaseManager(private val plugin: Startup) {
     }
 
     fun isConnected(): Boolean = ::connection.isInitialized && !connection.isClosed
+
+    private suspend fun addColumnIfNotExists(table: String, column: String, definition: String) {
+        try {
+            // Check if column exists
+            val checkResult = query("PRAGMA table_info($table)")
+            val columnExists = checkResult.any { it["name"]?.toString() == column }
+            
+            if (!columnExists) {
+                execute("ALTER TABLE $table ADD COLUMN $column $definition")
+                plugin.logger.info("Added column $column to $table")
+            }
+        } catch (e: Exception) {
+            plugin.logger.warning("Could not add column $column to $table: ${e.message}")
+        }
+    }
 }

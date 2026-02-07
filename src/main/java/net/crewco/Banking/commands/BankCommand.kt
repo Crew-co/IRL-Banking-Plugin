@@ -5,12 +5,15 @@ import com.google.inject.Inject
 import net.crewco.Banking.Startup
 import net.crewco.Banking.Startup.Companion.accountService
 import net.crewco.Banking.Startup.Companion.plugin
+import net.crewco.Banking.Startup.Companion.moneyService
 import net.crewco.Banking.Startup.Companion.transactionService
 import net.crewco.Banking.data.edata.WithdrawalResult
 import net.crewco.Banking.data.models.AccountType
 import net.crewco.Banking.services.AccountService
 import net.crewco.Banking.services.sdata.TransferResult
 import net.crewco.Banking.util.Messages
+import org.bukkit.Bukkit
+import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.incendo.cloud.annotations.*
 import org.incendo.cloud.annotations.suggestion.Suggestions
@@ -38,7 +41,7 @@ class BankCommand {
             "open", "create" -> openAccount(player, arguments.getOrNull(0))
             "deposit" -> deposit(player, arguments.getOrNull(0), arguments.getOrNull(1))
             "withdraw" -> withdraw(player, arguments.getOrNull(0), arguments.getOrNull(1))
-            "transfer", "send" -> transfer(player, arguments.getOrNull(0), arguments.getOrNull(1), arguments.getOrNull(2))
+            "transfer", "send", "pay" -> transfer(player, arguments.getOrNull(0), arguments.getOrNull(1), arguments.getOrNull(2))
             "history", "transactions" -> viewHistory(player, arguments.getOrNull(0))
             "info", "details" -> accountInfo(player, arguments.getOrNull(0))
             "help" -> showHelp(player)
@@ -63,6 +66,7 @@ class BankCommand {
             "deposit",
             "withdraw",
             "transfer",
+            "pay",
             "history",
             "info",
             "help"
@@ -193,140 +197,18 @@ class BankCommand {
     }
 
     private suspend fun deposit(player: Player, amountArg: String?, accountNumber: String?) {
-        if (amountArg == null) {
-            player.sendMessage(Messages.error("Usage: /bank deposit <amount> [account_number]"))
-            return
-        }
-
-        val amount = amountArg.toDoubleOrNull()
-        if (amount == null || amount <= 0) {
-            player.sendMessage(Messages.error("Invalid amount: $amountArg"))
-            return
-        }
-
-        val account = if (accountNumber != null) {
-            accountService.getAccount(accountNumber)
-        } else {
-            accountService.getPrimaryAccount(player.uniqueId)
-        }
-
-        if (account == null || account.uuid != player.uniqueId) {
-            player.sendMessage(Messages.accountNotFound())
-            return
-        }
-
-        val success = accountService.deposit(account.accountNumber, amount, player.uniqueId, "Manual deposit")
-
-        if (success) {
-            val newBalance = accountService.getBalance(account.accountNumber) ?: 0.0
-            player.sendMessage(Messages.depositSuccess(amount, newBalance))
-        } else {
-            player.sendMessage(Messages.error("Deposit failed."))
-        }
+        player.sendMessage(Messages.error("Deposits must be done at an ATM!"))
+        player.sendMessage(Messages.info("Find an ATM and use your bank card to deposit cash."))
     }
 
     private suspend fun withdraw(player: Player, amountArg: String?, accountNumber: String?) {
-        if (amountArg == null) {
-            player.sendMessage(Messages.error("Usage: /bank withdraw <amount> [account_number]"))
-            return
-        }
-
-        val amount = amountArg.toDoubleOrNull()
-        if (amount == null || amount <= 0) {
-            player.sendMessage(Messages.error("Invalid amount: $amountArg"))
-            return
-        }
-
-        val account = if (accountNumber != null) {
-            accountService.getAccount(accountNumber)
-        } else {
-            accountService.getPrimaryAccount(player.uniqueId)
-        }
-
-        if (account == null || account.uuid != player.uniqueId) {
-            player.sendMessage(Messages.accountNotFound())
-            return
-        }
-
-        val result = accountService.withdraw(account.accountNumber, amount, player.uniqueId, "Manual withdrawal")
-
-        when (result) {
-            WithdrawalResult.SUCCESS -> {
-                val newBalance = accountService.getBalance(account.accountNumber) ?: 0.0
-                player.sendMessage(Messages.withdrawSuccess(amount, newBalance))
-            }
-            WithdrawalResult.INSUFFICIENT_FUNDS -> {
-                player.sendMessage(Messages.error("Insufficient funds!"))
-            }
-            WithdrawalResult.DAILY_LIMIT_EXCEEDED -> {
-                player.sendMessage(Messages.error("Daily withdrawal limit exceeded!"))
-            }
-            WithdrawalResult.ACCOUNT_FROZEN -> {
-                player.sendMessage(Messages.error("Your account is frozen!"))
-            }
-        }
+        player.sendMessage(Messages.error("Withdrawals must be done at an ATM!"))
+        player.sendMessage(Messages.info("Find an ATM and use your bank card to withdraw cash."))
     }
 
     private suspend fun transfer(player: Player, amountArg: String?, toAccountNumber: String?, fromAccountNumber: String?) {
-        if (amountArg == null || toAccountNumber == null) {
-            player.sendMessage(Messages.error("Usage: /bank transfer <amount> <to_account> [from_account]"))
-            return
-        }
-
-        val amount = amountArg.toDoubleOrNull()
-        if (amount == null || amount <= 0) {
-            player.sendMessage(Messages.error("Invalid amount: $amountArg"))
-            return
-        }
-
-        val fromAccount = if (fromAccountNumber != null) {
-            accountService.getAccount(fromAccountNumber)
-        } else {
-            accountService.getPrimaryAccount(player.uniqueId)
-        }
-
-        if (fromAccount == null || fromAccount.uuid != player.uniqueId) {
-            player.sendMessage(Messages.error("Source account not found or doesn't belong to you!"))
-            return
-        }
-
-        val toAccount = accountService.getAccount(toAccountNumber)
-        if (toAccount == null) {
-            player.sendMessage(Messages.error("Destination account not found!"))
-            return
-        }
-
-        val result = accountService.transfer(
-            fromAccount.accountNumber,
-            toAccountNumber,
-            amount,
-            player.uniqueId,
-            "Transfer to $toAccountNumber"
-        )
-
-        when (result) {
-            TransferResult.SUCCESS -> {
-                player.sendMessage(Messages.transferSuccess(amount, toAccountNumber))
-            }
-            TransferResult.INSUFFICIENT_FUNDS -> {
-                player.sendMessage(Messages.error("Insufficient funds!"))
-            }
-            TransferResult.DAILY_LIMIT_EXCEEDED -> {
-                player.sendMessage(Messages.error("Daily limit exceeded!"))
-            }
-            TransferResult.FROM_ACCOUNT_FROZEN -> {
-                player.sendMessage(Messages.error("Your account is frozen!"))
-            }
-            TransferResult.TO_ACCOUNT_FROZEN -> {
-                player.sendMessage(Messages.error("Destination account is frozen!"))
-            }
-            TransferResult.SAME_ACCOUNT -> {
-                player.sendMessage(Messages.error("Cannot transfer to the same account!"))
-            }
-            else -> {
-                player.sendMessage(Messages.error("Transfer failed."))
-            }
-        }
+        player.sendMessage(Messages.error("Transfers must be done at an ATM!"))
+        player.sendMessage(Messages.info("Find an ATM and use your bank card to transfer funds."))
     }
 
     private suspend fun viewHistory(player: Player, accountNumber: String?) {
@@ -376,11 +258,11 @@ class BankCommand {
         player.sendMessage(Messages.info("/bank - List all your accounts"))
         player.sendMessage(Messages.info("/bank balance [account] - Check balance"))
         player.sendMessage(Messages.info("/bank open <type> - Open a new account"))
-        player.sendMessage(Messages.info("/bank deposit <amount> [account] - Deposit money"))
-        player.sendMessage(Messages.info("/bank withdraw <amount> [account] - Withdraw money"))
-        player.sendMessage(Messages.info("/bank transfer <amount> <to> [from] - Transfer money"))
         player.sendMessage(Messages.info("/bank history [account] - View transactions"))
         player.sendMessage(Messages.info("/bank info [account] - View account details"))
+        player.sendMessage(Messages.info(""))
+        player.sendMessage(Messages.warning("Deposits, withdrawals, and transfers"))
+        player.sendMessage(Messages.warning("must be done at an ATM!"))
         player.sendMessage(Messages.info(""))
         player.sendMessage(Messages.info("Account types: ${AccountType.entries.joinToString(", ") { it.name.lowercase() }}"))
     }

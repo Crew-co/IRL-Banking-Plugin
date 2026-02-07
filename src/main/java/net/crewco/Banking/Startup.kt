@@ -13,9 +13,11 @@ import net.crewco.Banking.gui.BankGUI
 import net.crewco.Banking.gui.CardGUI
 import net.crewco.Banking.gui.LoanGUI
 import net.crewco.Banking.listeners.ATMInteractListener
+import net.crewco.Banking.listeners.MoneyListener
 import net.crewco.Banking.listeners.PlayerJoinListener
 import net.crewco.Banking.services.*
 import net.crewco.Banking.util.BankCardItem
+import net.crewco.Banking.util.MoneyItem
 import net.crewco.Banking.vault.VaultEconomyProvider
 import net.crewco.common.CrewCoPlugin
 import net.milkbowl.vault.economy.Economy
@@ -41,6 +43,8 @@ class Startup : CrewCoPlugin() {
             private set
         lateinit var atmRepository: ATMRepository
             private set
+        lateinit var bankRepository: BankRepository
+            private set
 
         // Services
         lateinit var numberGeneratorService: NumberGeneratorService
@@ -56,6 +60,12 @@ class Startup : CrewCoPlugin() {
         lateinit var atmService: ATMService
             private set
         lateinit var interestService: InterestService
+            private set
+        lateinit var moneyService: MoneyService
+            private set
+        lateinit var treasuryService: TreasuryService
+            private set
+        lateinit var bankService: BankService
             private set
 
         // API
@@ -108,16 +118,22 @@ class Startup : CrewCoPlugin() {
             CardCommand::class,
             LoanCommand::class,
             ATMCommand::class,
-            AdminBankCommand::class
+            AdminBankCommand::class,
+            MoneyCommand::class,
+            MyBankCommand::class,
+            BanksCommand::class,
+            TreasuryCommand::class
         )
 
         // Register listeners
         registerListeners(
             PlayerJoinListener::class,
-            ATMInteractListener::class
+            ATMInteractListener::class,
+            MoneyListener::class
         )
 
         BankCardItem.initialize(this)
+        MoneyItem.initialize(this)
 
         // Start scheduled tasks
         interestService.startScheduler()
@@ -132,6 +148,7 @@ class Startup : CrewCoPlugin() {
         cardRepository = CardRepository(databaseManager)
         loanRepository = LoanRepository(databaseManager)
         atmRepository = ATMRepository(databaseManager, this)
+        bankRepository = BankRepository(databaseManager)
 
         // Services (order matters due to dependencies)
         numberGeneratorService = NumberGeneratorService()
@@ -139,8 +156,11 @@ class Startup : CrewCoPlugin() {
         accountService = AccountService(accountRepository, numberGeneratorService, transactionService)
         cardService = CardService(cardRepository, accountRepository, numberGeneratorService, transactionService)
         loanService = LoanService(loanRepository, accountRepository, numberGeneratorService, transactionService)
-        atmService = ATMService(atmRepository, accountRepository, numberGeneratorService, transactionService)
+        atmService = ATMService(atmRepository, accountRepository, bankRepository, numberGeneratorService, transactionService)
         interestService = InterestService(this, accountRepository, transactionService)
+        moneyService = MoneyService()
+        treasuryService = TreasuryService(bankRepository)
+        bankService = BankService(bankRepository, treasuryService)
 
         // GUI
         atmGUI = ATMGUI(this)

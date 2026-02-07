@@ -11,6 +11,7 @@ import net.crewco.Banking.data.models.Transaction
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -19,63 +20,74 @@ object Messages {
 
     private val currencyFormatter = NumberFormat.getCurrencyInstance(Locale.US)
     private val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")
+    
+    // Legacy serializer that supports & color codes only
+    private val legacySerializer = LegacyComponentSerializer.builder()
+        .character('&')
+        .hexColors()
+        .build()
 
     fun formatCurrency(amount: Double): String = currencyFormatter.format(amount)
 
+    /**
+     * Parse a string with & color codes into an Adventure Component
+     * Supports: &0-9, &a-f, &k-o, &r, and hex colors like &#RRGGBB
+     */
+    fun colorize(text: String): Component {
+        return legacySerializer.deserialize(text)
+    }
+
     fun header(title: String): Component = Component.text()
-        .append(Component.text("═══════ ", NamedTextColor.GOLD))
-        .append(Component.text(title, NamedTextColor.YELLOW, TextDecoration.BOLD))
-        .append(Component.text(" ═══════", NamedTextColor.GOLD))
+        .append(Component.text("======= ", NamedTextColor.GOLD))
+        .append(colorize("&e&l$title"))
+        .append(Component.text(" =======", NamedTextColor.GOLD))
+        .build()
+
+    fun subheader(title: String): Component = Component.text()
+        .append(Component.text("-- ", NamedTextColor.GRAY))
+        .append(colorize("&f$title"))
+        .append(Component.text(" --", NamedTextColor.GRAY))
         .build()
 
     fun success(message: String): Component = Component.text()
-        .append(Component.text("✓ ", NamedTextColor.GREEN))
-        .append(Component.text(message, NamedTextColor.GREEN))
+        .append(Component.text("[+] ", NamedTextColor.GREEN))
+        .append(colorize("&a$message"))
         .build()
 
     fun error(message: String): Component = Component.text()
-        .append(Component.text("✗ ", NamedTextColor.RED))
-        .append(Component.text(message, NamedTextColor.RED))
+        .append(Component.text("[x] ", NamedTextColor.RED))
+        .append(colorize("&c$message"))
         .build()
 
     fun info(message: String): Component = Component.text()
-        .append(Component.text("ℹ ", NamedTextColor.AQUA))
-        .append(Component.text(message, NamedTextColor.GRAY))
+        .append(Component.text("[i] ", NamedTextColor.AQUA))
+        .append(colorize("&7$message"))
         .build()
 
-    /**
-     * Info message with a label and value - uses proper Adventure components
-     */
     fun infoLabeled(label: String, value: String): Component = Component.text()
-        .append(Component.text("ℹ ", NamedTextColor.AQUA))
+        .append(Component.text("[i] ", NamedTextColor.AQUA))
         .append(Component.text("$label: ", NamedTextColor.GRAY))
-        .append(Component.text(value, NamedTextColor.WHITE))
+        .append(colorize(value))
         .build()
 
-    /**
-     * Account type header for admin display
-     */
     fun accountTypeHeader(typeName: String): Component = Component.text()
-        .append(Component.text("ℹ ", NamedTextColor.AQUA))
+        .append(Component.text("[i] ", NamedTextColor.AQUA))
         .append(Component.text("$typeName Account", NamedTextColor.YELLOW))
         .build()
 
-    /**
-     * Wallet info display with proper Adventure components
-     */
     fun walletInfo(accountNumber: String, balance: Double): Component = Component.text()
-        .append(Component.text("ℹ ", NamedTextColor.AQUA))
+        .append(Component.text("[i] ", NamedTextColor.AQUA))
         .append(Component.text("Active Wallet: ", NamedTextColor.GREEN))
         .append(Component.text(accountNumber, NamedTextColor.WHITE))
         .append(Component.newline())
-        .append(Component.text("ℹ ", NamedTextColor.AQUA))
+        .append(Component.text("[i] ", NamedTextColor.AQUA))
         .append(Component.text("Wallet Balance: ", NamedTextColor.GREEN))
         .append(Component.text(formatCurrency(balance), NamedTextColor.WHITE))
         .build()
 
     fun warning(message: String): Component = Component.text()
-        .append(Component.text("⚠ ", NamedTextColor.GOLD))
-        .append(Component.text(message, NamedTextColor.YELLOW))
+        .append(Component.text("[!] ", NamedTextColor.GOLD))
+        .append(colorize("&e$message"))
         .build()
 
     fun welcome(): Component = Component.text()
@@ -96,7 +108,7 @@ object Messages {
 
     fun accountLine(name: String, type: String, accountNumber: String, balance: Double): Component =
         Component.text()
-            .append(Component.text("  • ", NamedTextColor.GRAY))
+            .append(Component.text("  * ", NamedTextColor.GRAY))
             .append(Component.text(name, NamedTextColor.WHITE))
             .append(Component.text(" ($type)", NamedTextColor.DARK_GRAY))
             .append(Component.text(" #$accountNumber", NamedTextColor.GRAY))
@@ -150,8 +162,8 @@ object Messages {
     fun transactionLine(tx: Transaction): Component {
         val arrow = when (tx.type) {
             TransactionType.DEPOSIT, TransactionType.ATM_DEPOSIT,
-            TransactionType.LOAN_DISBURSEMENT, TransactionType.INTEREST_CREDIT -> "↓"
-            else -> "↑"
+            TransactionType.LOAN_DISBURSEMENT, TransactionType.INTEREST_CREDIT -> "[v]"
+            else -> "[^]"
         }
         val color = when (tx.type) {
             TransactionType.DEPOSIT, TransactionType.ATM_DEPOSIT,
@@ -169,7 +181,7 @@ object Messages {
     }
 
     fun cardLine(card: Card): Component = Component.text()
-        .append(Component.text("  • ", NamedTextColor.GRAY))
+        .append(Component.text("  * ", NamedTextColor.GRAY))
         .append(Component.text(card.cardType.displayName, NamedTextColor.AQUA))
         .append(Component.text(" ${card.getMaskedNumber()}", NamedTextColor.WHITE))
         .append(
@@ -198,7 +210,7 @@ object Messages {
         .build()
 
     fun loanLine(loan: Loan): Component = Component.text()
-        .append(Component.text("  • ", NamedTextColor.GRAY))
+        .append(Component.text("  * ", NamedTextColor.GRAY))
         .append(Component.text(loan.loanType.displayName, NamedTextColor.AQUA))
         .append(Component.text(" #${loan.loanId}", NamedTextColor.DARK_GRAY))
         .append(Component.text(" - ", NamedTextColor.DARK_GRAY))
@@ -260,7 +272,7 @@ object Messages {
         .build()
 
     fun atmLine(atm: ATM, distance: Double): Component = Component.text()
-        .append(Component.text("  • ", NamedTextColor.GRAY))
+        .append(Component.text("  * ", NamedTextColor.GRAY))
         .append(Component.text("ATM ${atm.atmId}", NamedTextColor.AQUA))
         .append(Component.text(" - ${String.format("%.1f", distance)} blocks away", NamedTextColor.GRAY))
         .append(Component.text(" (Fee: ${formatCurrency(atm.transactionFee)})", NamedTextColor.DARK_GRAY))
@@ -284,7 +296,7 @@ object Messages {
         .build()
 
     fun adminAtmLine(atm: ATM): Component = Component.text()
-        .append(Component.text("  • ", NamedTextColor.GRAY))
+        .append(Component.text("  * ", NamedTextColor.GRAY))
         .append(Component.text(atm.atmId, NamedTextColor.AQUA))
         .append(Component.text(" @ ${atm.location.world?.name}:${atm.location.blockX},${atm.location.blockY},${atm.location.blockZ}", NamedTextColor.GRAY))
         .append(Component.text(" Cash: ${formatCurrency(atm.cash)}", NamedTextColor.GREEN))
@@ -292,4 +304,13 @@ object Messages {
             Component.text(" (${if (atm.active) "Active" else "Inactive"})",
                 if (atm.active) NamedTextColor.GREEN else NamedTextColor.RED))
         .build()
+    
+    // Color code reference:
+    // &0 = Black       &1 = Dark Blue    &2 = Dark Green   &3 = Dark Aqua
+    // &4 = Dark Red    &5 = Dark Purple  &6 = Gold         &7 = Gray
+    // &8 = Dark Gray   &9 = Blue         &a = Green        &b = Aqua
+    // &c = Red         &d = Light Purple &e = Yellow       &f = White
+    // &k = Obfuscated  &l = Bold         &m = Strikethrough
+    // &n = Underline   &o = Italic       &r = Reset
+    // &#RRGGBB = Hex color
 }

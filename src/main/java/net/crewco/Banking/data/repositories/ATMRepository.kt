@@ -15,17 +15,19 @@ class ATMRepository(private val db: DatabaseManager, private val plugin: Startup
         val affected = db.execute(
             """
             INSERT INTO bank_atms 
-            (atm_id, world, x, y, z, cash, max_withdrawal, transaction_fee, active, placed_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (atm_id, world, x, y, z, bank_id, cash, max_withdrawal, transaction_fee, out_of_network_fee, active, placed_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """.trimIndent(),
             atm.atmId,
             atm.location.world?.name ?: "world",
             atm.location.x,
             atm.location.y,
             atm.location.z,
+            atm.bankId,
             atm.cash,
             atm.maxWithdrawal,
             atm.transactionFee,
+            atm.outOfNetworkFee,
             atm.active,
             atm.placedBy.toString()
         )
@@ -79,10 +81,36 @@ class ATMRepository(private val db: DatabaseManager, private val plugin: Startup
         return results.map { it.toATM() }
     }
 
+    suspend fun findByBankId(bankId: String): List<ATM> {
+        val results = db.query(
+            "SELECT * FROM bank_atms WHERE bank_id = ?",
+            bankId
+        )
+        return results.map { it.toATM() }
+    }
+
+    suspend fun countByBankId(bankId: String): Int {
+        val results = db.query(
+            "SELECT COUNT(*) as cnt FROM bank_atms WHERE bank_id = ?",
+            bankId
+        )
+        return (results.firstOrNull()?.get("cnt") as? Number)?.toInt() ?: 0
+    }
+
     suspend fun updateCash(atmId: String, cash: Double): Boolean {
         val affected = db.execute(
             "UPDATE bank_atms SET cash = ? WHERE atm_id = ?",
             cash,
+            atmId
+        )
+        return affected > 0
+    }
+
+    suspend fun updateFees(atmId: String, transactionFee: Double, outOfNetworkFee: Double): Boolean {
+        val affected = db.execute(
+            "UPDATE bank_atms SET transaction_fee = ?, out_of_network_fee = ? WHERE atm_id = ?",
+            transactionFee,
+            outOfNetworkFee,
             atmId
         )
         return affected > 0
@@ -118,9 +146,11 @@ class ATMRepository(private val db: DatabaseManager, private val plugin: Startup
                 (this["y"] as Number).toDouble(),
                 (this["z"] as Number).toDouble()
             ),
+            bankId = this["bank_id"]?.toString() ?: "SYSTEM",
             cash = (this["cash"] as Number).toDouble(),
             maxWithdrawal = (this["max_withdrawal"] as Number).toDouble(),
             transactionFee = (this["transaction_fee"] as Number).toDouble(),
+            outOfNetworkFee = (this["out_of_network_fee"] as? Number)?.toDouble() ?: 5.0,
             active = (this["active"] as Number).toInt() == 1,
             placedBy = UUID.fromString(this["placed_by"] as String),
             createdAt = parseDateTime(this["created_at"] as? String)
